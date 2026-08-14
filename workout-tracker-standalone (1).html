@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Workout Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0D0D0D; color: #F9FAFB; font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+  #app { max-width: 500px; margin: 0 auto; padding: 24px 18px 80px; }
+
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .gap8 { gap: 8px; }
+  .mb6  { margin-bottom: 6px; }
+  .mb12 { margin-bottom: 12px; }
+  .mb18 { margin-bottom: 18px; }
+  .mb24 { margin-bottom: 24px; }
+
+  /* BUTTONS */
+  button { cursor: pointer; font-family: inherit; border: none; }
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #D1D5DB; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 500; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #D1D5DB; }
+  .btn-primary { background: #3B82F6; color: #fff; border: none; }
+  .btn-danger  { background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }
+
+  /* INPUTS */
+  input[type=text], input[type=number] {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 7px;
+    color: #F9FAFB;
+    font-family: monospace;
+    font-size: 14px;
+    padding: 8px 10px;
+    text-align: center;
+    outline: none;
+    width: 100%;
+  }
+  input[type=text] { font-family: inherit; text-align: left; }
+  input::placeholder { color: #4B5563; }
+
+  /* CARDS */
+  .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+  .card-inner { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+
+  /* TAGS */
+  .tag { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); border-radius: 20px; padding: 3px 10px; font-size: 12px; color: #93C5FD; display: inline-block; margin: 3px; }
+
+  /* FLASH */
+  .flash { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; color: #4ADE80; font-size: 13px; }
+
+  /* PROGRESS BAR */
+  .prog-wrap { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .prog-fill  { height: 100%; background: #3B82F6; border-radius: 2px; transition: width 0.3s; }
+
+  /* SET GRID */
+  .set-grid { display: grid; grid-template-columns: 26px 72px 66px 1fr; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .set-grid:last-child { border-bottom: none; }
+  .set-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #9CA3AF; flex-shrink: 0; }
+  .col-hdr { display: grid; grid-template-columns: 26px 72px 66px 1fr; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 4px; }
+  .col-lbl { font-size: 10px; color: #4B5563; text-align: center; letter-spacing: 0.05em; }
+
+  /* STATUS BUTTONS */
+  .status-group { display: flex; gap: 5px; }
+  .status-btn { flex: 1; padding: 6px 0; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.03em; border: 1.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #4B5563; transition: all 0.1s; }
+  .status-btn.active-NF { background: rgba(74,222,128,0.18);  border-color: rgba(74,222,128,0.5);  color: #4ADE80; }
+  .status-btn.active-TF { background: rgba(251,191,36,0.18); border-color: rgba(251,191,36,0.5); color: #FBBF24; }
+  .status-btn.active-F  { background: rgba(248,113,113,0.18); border-color: rgba(248,113,113,0.5); color: #F87171; }
+
+  /* LEGEND */
+  .legend { display: flex; gap: 14px; margin-bottom: 20px; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #6B7280; }
+
+  /* HISTORY PILL */
+  .hist-pill { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 5px; padding: 3px 8px; margin: 2px; }
+
+  /* SECTION LABEL */
+  .sec-lbl { font-size: 11px; color: #6B7280; letter-spacing: 0.05em; margin-bottom: 6px; }
+
+  .muted { color: #6B7280; font-size: 12px; }
+  .green { color: #4ADE80; }
+  .red   { color: #F87171; }
+  .mono  { font-family: monospace; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 60px 0; color: #6B7280; font-size: 14px; }
+  .link  { color: #3B82F6; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────
+const STORAGE_KEY = "wt-standalone-v1";
+const STATUSES = [
+  { key: "NF", label: "NF", color: "#4ADE80" },
+  { key: "TF", label: "TF", color: "#FBBF24" },
+  { key: "F",  label: "F",  color: "#F87171" },
+];
+const DEFAULTS = [
+  { id: "push", name: "Push Day", exercises: [
+    { id: "bench", name: "Bench Press",    sets: 3, reps: 8  },
+    { id: "ohp",   name: "Overhead Press", sets: 3, reps: 8  },
+    { id: "tri",   name: "Tricep Pushdown",sets: 3, reps: 12 },
+  ]},
+  { id: "pull", name: "Pull Day", exercises: [
+    { id: "row",      name: "Barbell Row",  sets: 3, reps: 8  },
+    { id: "pulldown", name: "Lat Pulldown", sets: 3, reps: 10 },
+    { id: "curl",     name: "Bicep Curl",   sets: 3, reps: 12 },
+  ]},
+  { id: "legs", name: "Leg Day", exercises: [
+    { id: "squat",  name: "Squat",              sets: 4, reps: 6  },
+    { id: "rdl",    name: "Romanian Deadlift",   sets: 3, reps: 10 },
+    { id: "lpress", name: "Leg Press",           sets: 3, reps: 12 },
+  ]},
+];
+
+let state = {
+  view: "home",           // home | workout | new | edit | history
+  data: { workouts: DEFAULTS, history: {} },
+  activeWorkout: null,
+  session: {},            // { [exId]: [{weight,reps,status}] }
+  newWkt: { name: "", exercises: [] },
+  newEx: { name: "", sets: 3, reps: 8 },
+  editWkt: null,          // workout being edited (deep copy)
+  editEx:  { name: "", sets: 3, reps: 8 },
+  flash: "",
+};
+
+// ─── PASSWORD GATE ────────────────────────────────────────────────
+const PW_HASH = "f87d55b553de02175a3e925ded8cff81bdc289308ce6a5e090e2d240d76b6487";
+const PW_KEY  = "wt-auth";
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+function isUnlocked() {
+  return sessionStorage.getItem(PW_KEY) === "1";
+}
+
+function renderLock() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;padding:24px;";
+
+  const title = document.createElement("div");
+  title.textContent = "Workout Tracker";
+  title.style.cssText = "font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px;";
+  wrap.appendChild(title);
+
+  const sub = document.createElement("div");
+  sub.textContent = "Enter your password to continue";
+  sub.style.cssText = "font-size:13px;color:#6B7280;margin-bottom:8px;";
+  wrap.appendChild(sub);
+
+  const inp = document.createElement("input");
+  inp.type = "password";
+  inp.placeholder = "Password";
+  inp.style.cssText = "width:100%;max-width:260px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);border-radius:8px;color:#F9FAFB;font-size:16px;padding:12px 14px;text-align:center;outline:none;";
+  wrap.appendChild(inp);
+
+  const errMsg = document.createElement("div");
+  errMsg.style.cssText = "font-size:12px;color:#F87171;min-height:16px;";
+  wrap.appendChild(errMsg);
+
+  const b = document.createElement("button");
+  b.textContent = "Unlock";
+  b.style.cssText = "padding:10px 32px;border-radius:8px;background:#3B82F6;color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;";
+  wrap.appendChild(b);
+
+  async function tryUnlock() {
+    const hash = await sha256(inp.value.trim());
+    if (hash === PW_HASH) {
+      sessionStorage.setItem(PW_KEY, "1");
+      loadData();
+    } else {
+      errMsg.textContent = "Incorrect password";
+      inp.value = "";
+      inp.focus();
+    }
+  }
+
+  b.addEventListener("click", tryUnlock);
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
+
+  app.appendChild(wrap);
+  setTimeout(() => inp.focus(), 50);
+}
+
+// ─── STORAGE (localStorage) ──────────────────────────────────────
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) state.data = JSON.parse(saved);
+  } catch(_) {}
+  render();
+}
+function saveData() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); } catch(_) {}
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+function makeSets(n, defaultReps, prevSets) {
+  return Array.from({ length: n }, (_, i) => ({
+    weight: prevSets?.[i]?.weight ?? "",
+    reps:   prevSets?.[i]?.reps   ?? String(defaultReps ?? ""),
+    status: null,
+  }));
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function today() { return new Date().toISOString().slice(0, 10); }
+function avgWeight(sets) {
+  const ws = sets.map(s => parseFloat(s.weight)).filter(Boolean);
+  return ws.length ? (ws.reduce((a,b) => a+b,0)/ws.length).toFixed(1) : null;
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  if (state.view === "home")    app.appendChild(renderHome());
+  if (state.view === "workout") app.appendChild(renderWorkout());
+  if (state.view === "new")     app.appendChild(renderNew());
+  if (state.view === "edit")    app.appendChild(renderEdit());
+  if (state.view === "history") app.appendChild(renderHistory());
+}
+
+// ─── HOME ────────────────────────────────────────────────────────
+function renderHome() {
+  const div = el("div");
+
+  // header
+  const hdr = el("div", "row mb24");
+  hdr.appendChild(elText("h1", "Workouts"));
+  const hbtns = el("div", "row gap8");
+  hbtns.appendChild(btn("History", () => go("history"), "sm"));
+  hbtns.appendChild(btn("+ New",   () => go("new"),     "sm"));
+  hdr.appendChild(hbtns);
+  div.appendChild(hdr);
+
+  // flash
+  if (state.flash) {
+    div.appendChild(elText("div", state.flash, "flash"));
+    setTimeout(() => { state.flash = ""; render(); }, 2000);
+  }
+
+  // workouts
+  if (!state.data.workouts.length) {
+    const e = el("div", "empty");
+    e.innerHTML = 'No workouts. <span class="link" id="go-new">Create one →</span>';
+    div.appendChild(e);
+    setTimeout(() => document.getElementById("go-new")?.addEventListener("click", () => go("new")), 0);
+    return div;
+  }
+
+  state.data.workouts.forEach(w => {
+    const card = el("div", "card");
+
+    const top = el("div", "row mb12");
+    const info = el("div");
+    info.appendChild(elText("div", w.name, "", { fontWeight:700, fontSize:"16px" }));
+    info.appendChild(elText("div", `${w.exercises.length} exercises`, "muted"));
+    top.appendChild(info);
+
+    const btns = el("div", "row gap8");
+    btns.appendChild(btn("Start", () => startWorkout(w), "primary"));
+    btns.appendChild(btn("Edit",  () => openEdit(w),     "sm"));
+    btns.appendChild(btn("✕",     () => deleteWorkout(w.id), "danger"));
+    top.appendChild(btns);
+    card.appendChild(top);
+
+    const tags = el("div");
+    w.exercises.forEach(ex => tags.appendChild(elText("span", ex.name, "tag")));
+    card.appendChild(tags);
+
+    div.appendChild(card);
+  });
+
+  return div;
+}
+
+// ─── WORKOUT ─────────────────────────────────────────────────────
+function renderWorkout() {
+  const w = state.activeWorkout;
+  const div = el("div");
+
+  // header
+  const hdr = el("div", "row mb6");
+  hdr.appendChild(elText("h2", w.name));
+  hdr.appendChild(btn("← Back", () => go("home"), "sm"));
+  div.appendChild(hdr);
+
+  // progress
+  const totalSets = w.exercises.reduce((a, ex) => a + ex.sets, 0);
+  const doneSets  = w.exercises.reduce((a, ex) => {
+    return a + (state.session[ex.id] || []).filter(s => s.weight && s.reps && s.status).length;
+  }, 0);
+  const progWrap = el("div", "mb18");
+  progWrap.appendChild(elText("div", `${doneSets}/${totalSets} sets complete`, "muted mb6"));
+  const pw = el("div", "prog-wrap");
+  const pf = el("div", "prog-fill");
+  pf.style.width = totalSets ? `${(doneSets/totalSets)*100}%` : "0%";
+  pw.appendChild(pf); progWrap.appendChild(pw);
+  div.appendChild(progWrap);
+
+  // legend
+  const leg = el("div", "legend");
+  STATUSES.forEach(s => {
+    const item = el("div", "legend-item");
+    const dot = el("div", "legend-dot");
+    dot.style.background = s.color;
+    item.appendChild(dot);
+    item.appendChild(elText("span", s.key === "NF" ? "No Failure" : s.key === "TF" ? "Technical Failure" : "Failure"));
+    leg.appendChild(item);
+  });
+  div.appendChild(leg);
+
+  // exercise cards
+  w.exercises.forEach(ex => {
+    div.appendChild(renderExerciseCard(ex));
+  });
+
+  div.appendChild(btn("Save Session", saveSession, "primary"));
+  return div;
+}
+
+function renderExerciseCard(ex) {
+  const sets = state.session[ex.id] || [];
+  const logged  = sets.filter(s => s.weight && s.reps).length;
+  const statusd = sets.filter(s => s.status).length;
+
+  const card = el("div", "card-inner");
+
+  // card header
+  const hdr = el("div", "row mb12");
+  const info = el("div");
+  info.appendChild(elText("div", ex.name, "", { fontWeight:700, fontSize:"15px" }));
+  info.appendChild(elText("div", `${ex.sets} sets · ${ex.reps} reps`, "muted"));
+  hdr.appendChild(info);
+
+  const counts = el("div", "", { textAlign:"right" });
+  counts.appendChild(elText("div", `${logged}/${ex.sets} weights+reps`, logged === ex.sets ? "green" : "muted", { fontSize:"11px" }));
+  counts.appendChild(elText("div", `${statusd}/${ex.sets} statuses`,    statusd === ex.sets ? "green" : "muted", { fontSize:"11px" }));
+  hdr.appendChild(counts);
+  card.appendChild(hdr);
+
+  // column headers
+  const colHdr = el("div", "col-hdr");
+  colHdr.appendChild(el("div"));
+  colHdr.appendChild(elText("div", "WEIGHT", "col-lbl"));
+  colHdr.appendChild(elText("div", "REPS",   "col-lbl"));
+  const statusHdrs = el("div", "status-group");
+  STATUSES.forEach(s => statusHdrs.appendChild(elText("div", s.key, "col-lbl", { flex:1, textAlign:"center" })));
+  colHdr.appendChild(statusHdrs);
+  card.appendChild(colHdr);
+
+  // set rows
+  sets.forEach((set, i) => {
+    card.appendChild(renderSetRow(ex.id, i, set));
+  });
+
+  return card;
+}
+
+function renderSetRow(exId, i, set) {
+  const row = el("div", "set-grid");
+
+  // badge
+  const badge = el("div", "set-num");
+  badge.textContent = i + 1;
+  row.appendChild(badge);
+
+  // weight
+  const wInp = document.createElement("input");
+  wInp.type = "number"; wInp.inputMode = "decimal";
+  wInp.placeholder = "lbs"; wInp.value = set.weight;
+  wInp.addEventListener("input", e => {
+    state.session[exId][i].weight = e.target.value;
+    refreshProgress();
+  });
+  row.appendChild(wInp);
+
+  // reps
+  const rInp = document.createElement("input");
+  rInp.type = "number"; rInp.inputMode = "numeric";
+  rInp.placeholder = "reps"; rInp.value = set.reps;
+  rInp.addEventListener("input", e => {
+    state.session[exId][i].reps = e.target.value;
+    refreshProgress();
+  });
+  row.appendChild(rInp);
+
+  // status buttons
+  const grp = el("div", "status-group");
+  STATUSES.forEach(s => {
+    const b = el("button", "status-btn" + (set.status === s.key ? ` active-${s.key}` : ""));
+    b.textContent = s.key;
+    b.addEventListener("click", () => {
+      state.session[exId][i].status = (set.status === s.key) ? null : s.key;
+      render();
+    });
+    grp.appendChild(b);
+  });
+  row.appendChild(grp);
+
+  return row;
+}
+
+// lightweight progress refresh without full re-render
+function refreshProgress() {
+  const w = state.activeWorkout;
+  if (!w) return;
+  const totalSets = w.exercises.reduce((a, ex) => a + ex.sets, 0);
+  const doneSets  = w.exercises.reduce((a, ex) => {
+    return a + (state.session[ex.id] || []).filter(s => s.weight && s.reps && s.status).length;
+  }, 0);
+  const pf = document.querySelector(".prog-fill");
+  if (pf) pf.style.width = totalSets ? `${(doneSets/totalSets)*100}%` : "0%";
+  // update logged counts per card
+  w.exercises.forEach(ex => {
+    const sets = state.session[ex.id] || [];
+    const logged  = sets.filter(s => s.weight && s.reps).length;
+    const statusd = sets.filter(s => s.status).length;
+  });
+}
+
+// ─── NEW WORKOUT ─────────────────────────────────────────────────
+function renderNew() {
+  const div = el("div");
+
+  const hdr = el("div", "row mb24");
+  hdr.appendChild(elText("h2", "New Workout"));
+  hdr.appendChild(btn("← Back", () => go("home"), "sm"));
+  div.appendChild(hdr);
+
+  // workout name
+  div.appendChild(elText("div", "WORKOUT NAME", "sec-lbl"));
+  const nameInp = document.createElement("input");
+  nameInp.type = "text"; nameInp.placeholder = "e.g. Upper Body";
+  nameInp.value = state.newWkt.name;
+  nameInp.className = "mb18";
+  nameInp.addEventListener("input", e => state.newWkt.name = e.target.value);
+  div.appendChild(nameInp);
+
+  // existing exercises
+  if (state.newWkt.exercises.length) {
+    div.appendChild(elText("div", "EXERCISES", "sec-lbl"));
+    state.newWkt.exercises.forEach((ex, i) => {
+      const row = el("div", "row mb6");
+      const info = el("div");
+      info.appendChild(elText("div", ex.name, "", { fontWeight:600, fontSize:"14px" }));
+      info.appendChild(elText("div", `${ex.sets} sets · ${ex.reps} reps`, "muted"));
+      row.appendChild(info);
+      row.appendChild(btn("Remove", () => {
+        state.newWkt.exercises.splice(i, 1);
+        render();
+      }, "danger"));
+      div.appendChild(row);
+    });
+    div.appendChild(el("div", "mb12"));
+  }
+
+  // add exercise form
+  const box = el("div", "card");
+  box.appendChild(elText("div", "ADD EXERCISE", "sec-lbl"));
+
+  const exName = document.createElement("input");
+  exName.type = "text"; exName.placeholder = "Exercise name";
+  exName.value = state.newEx.name;
+  exName.className = "mb12";
+  exName.addEventListener("input", e => state.newEx.name = e.target.value);
+  box.appendChild(exName);
+
+  const nums = el("div", "row gap8 mb12");
+  ["sets","reps"].forEach(key => {
+    const wrap = el("div", "", { flex:1 });
+    wrap.appendChild(elText("div", key.toUpperCase(), "sec-lbl"));
+    const inp = document.createElement("input");
+    inp.type = "number"; inp.value = state.newEx[key];
+    inp.addEventListener("input", e => state.newEx[key] = parseInt(e.target.value) || 0);
+    wrap.appendChild(inp);
+    nums.appendChild(wrap);
+  });
+  box.appendChild(nums);
+
+  box.appendChild(btn("+ Add Exercise", () => {
+    if (!state.newEx.name) return;
+    state.newWkt.exercises.push({ ...state.newEx });
+    state.newEx = { name: "", sets: 3, reps: 8 };
+    render();
+  }));
+  div.appendChild(box);
+  div.appendChild(el("div", "mb12"));
+
+  div.appendChild(btn("Save Workout", () => {
+    if (!state.newWkt.name || !state.newWkt.exercises.length) return;
+    const wkt = {
+      id: uid(),
+      name: state.newWkt.name,
+      exercises: state.newWkt.exercises.map(ex => ({ ...ex, id: uid() })),
+    };
+    state.data.workouts.push(wkt);
+    saveData();
+    state.newWkt = { name: "", exercises: [] };
+    go("home");
+  }, state.newWkt.name && state.newWkt.exercises.length ? "primary" : ""));
+
+  return div;
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────
+function renderHistory() {
+  const div = el("div");
+
+  const hdr = el("div", "row mb24");
+  hdr.appendChild(elText("h2", "Progress"));
+  hdr.appendChild(btn("← Back", () => go("home"), "sm"));
+  div.appendChild(hdr);
+
+  const allEx = state.data.workouts.flatMap(w =>
+    w.exercises.map(ex => ({ ...ex, wktName: w.name }))
+  );
+  const tracked = allEx.filter(ex => state.data.history[ex.id]?.length);
+
+  if (!tracked.length) {
+    div.appendChild(elText("div", "No sessions logged yet.", "empty"));
+    return div;
+  }
+
+  tracked.forEach(ex => {
+    const hist = state.data.history[ex.id];
+    const firstAvg = parseFloat(avgWeight(hist[0].sets)) || 0;
+    const lastAvg  = parseFloat(avgWeight(hist[hist.length-1].sets)) || 0;
+    const delta = +(lastAvg - firstAvg).toFixed(1);
+
+    const card = el("div", "card");
+
+    // header
+    const hd = el("div", "row mb12");
+    const info = el("div");
+    info.appendChild(elText("div", ex.name, "", { fontWeight:700, fontSize:"14px" }));
+    info.appendChild(elText("div", ex.wktName, "muted"));
+    hd.appendChild(info);
+
+    const right = el("div", "", { textAlign:"right" });
+    right.appendChild(elText("div", `${lastAvg} lbs`, "mono", { fontSize:"18px", fontWeight:700 }));
+    right.appendChild(elText("div", `${delta > 0 ? "+" : ""}${delta} from start`, delta > 0 ? "green" : delta < 0 ? "red" : "muted", { fontSize:"11px" }));
+    hd.appendChild(right);
+    card.appendChild(hd);
+
+    // sessions
+    hist.forEach(sess => {
+      const sb = el("div", "", { background:"rgba(255,255,255,0.03)", borderRadius:"7px", padding:"8px 10px", marginBottom:"6px" });
+      sb.appendChild(elText("div", `${sess.date} · avg ${avgWeight(sess.sets) || "—"} lbs`, "muted mb6"));
+      const pills = el("div");
+      sess.sets.forEach((s, i) => {
+        const st = STATUSES.find(o => o.key === s.status);
+        const pill = el("div", "hist-pill");
+        pill.appendChild(elText("span", `S${i+1}`, "muted", { fontSize:"10px" }));
+        pill.appendChild(elText("span", `${s.weight || "—"}lbs`, "mono", { fontSize:"12px", color:"#E5E7EB" }));
+        pill.appendChild(elText("span", `×${s.reps || "—"}`, "mono", { fontSize:"12px", color:"#9CA3AF" }));
+        if (st) pill.appendChild(elText("span", st.key, "", { fontSize:"10px", fontWeight:800, color:st.color }));
+        pills.appendChild(pill);
+      });
+      sb.appendChild(pills);
+      card.appendChild(sb);
+    });
+
+    div.appendChild(card);
+  });
+
+  return div;
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────
+function go(view) { state.view = view; render(); }
+
+function startWorkout(w) {
+  state.activeWorkout = w;
+  state.session = {};
+  w.exercises.forEach(ex => {
+    const hist = state.data.history[ex.id];
+    const prev = hist?.[hist.length - 1]?.sets;
+    state.session[ex.id] = makeSets(ex.sets, ex.reps, prev);
+  });
+  go("workout");
+}
+
+function saveSession() {
+  const w = state.activeWorkout;
+  w.exercises.forEach(ex => {
+    const sets = state.session[ex.id];
+    if (sets?.some(s => s.weight || s.reps || s.status)) {
+      if (!state.data.history[ex.id]) state.data.history[ex.id] = [];
+      state.data.history[ex.id].push({ date: today(), sets });
+      if (state.data.history[ex.id].length > 20)
+        state.data.history[ex.id] = state.data.history[ex.id].slice(-20);
+    }
+  });
+  saveData();
+  state.flash = "✓ Session saved";
+  go("home");
+}
+
+function deleteWorkout(id) {
+  state.data.workouts = state.data.workouts.filter(w => w.id !== id);
+  saveData();
+  render();
+}
+
+function openEdit(w) {
+  // deep copy so we don't mutate live data until Save
+  state.editWkt = JSON.parse(JSON.stringify(w));
+  state.editEx  = { name: "", sets: 3, reps: 8 };
+  go("edit");
+}
+
+function saveEdit() {
+  if (!state.editWkt.name || !state.editWkt.exercises.length) return;
+  const idx = state.data.workouts.findIndex(w => w.id === state.editWkt.id);
+  if (idx !== -1) state.data.workouts[idx] = state.editWkt;
+  saveData();
+  state.flash = "✓ Workout updated";
+  go("home");
+}
+
+// ─── EDIT VIEW ───────────────────────────────────────────────────
+function renderEdit() {
+  const w = state.editWkt;
+  const div = el("div");
+
+  // header
+  const hdr = el("div", "row mb24");
+  hdr.appendChild(elText("h2", "Edit Workout"));
+  hdr.appendChild(btn("← Back", () => go("home"), "sm"));
+  div.appendChild(hdr);
+
+  // workout name
+  div.appendChild(elText("div", "WORKOUT NAME", "sec-lbl"));
+  const nameInp = document.createElement("input");
+  nameInp.type = "text";
+  nameInp.placeholder = "Workout name";
+  nameInp.value = w.name;
+  nameInp.className = "mb18";
+  nameInp.addEventListener("input", e => state.editWkt.name = e.target.value);
+  div.appendChild(nameInp);
+
+  // existing exercises
+  div.appendChild(elText("div", "EXERCISES", "sec-lbl"));
+  if (!w.exercises.length) {
+    div.appendChild(elText("div", "No exercises yet — add one below.", "muted mb12"));
+  }
+  w.exercises.forEach((ex, i) => {
+    const row = el("div", "card", { display:"flex", alignItems:"flex-start", gap:"10px", padding:"12px 14px" });
+
+    // editable fields inline
+    const fields = el("div", "", { flex:1 });
+
+    const nameRow = el("div", "mb6");
+    const exNameInp = document.createElement("input");
+    exNameInp.type = "text";
+    exNameInp.value = ex.name;
+    exNameInp.placeholder = "Exercise name";
+    exNameInp.addEventListener("input", e => state.editWkt.exercises[i].name = e.target.value);
+    nameRow.appendChild(exNameInp);
+    fields.appendChild(nameRow);
+
+    const numRow = el("div", "row gap8");
+    ["sets","reps"].forEach(key => {
+      const wrap = el("div", "", { flex:1 });
+      wrap.appendChild(elText("div", key.toUpperCase(), "sec-lbl"));
+      const inp = document.createElement("input");
+      inp.type = "number";
+      inp.value = ex[key];
+      inp.addEventListener("input", e => state.editWkt.exercises[i][key] = parseInt(e.target.value) || 0);
+      wrap.appendChild(inp);
+      numRow.appendChild(wrap);
+    });
+    fields.appendChild(numRow);
+    row.appendChild(fields);
+
+    // remove button
+    const removeBtn = btn("✕", () => {
+      state.editWkt.exercises.splice(i, 1);
+      render();
+    }, "danger");
+    removeBtn.style.flexShrink = "0";
+    removeBtn.style.marginTop = "2px";
+    row.appendChild(removeBtn);
+
+    div.appendChild(row);
+  });
+
+  div.appendChild(el("div", "mb6"));
+
+  // add new exercise
+  const box = el("div", "card");
+  box.appendChild(elText("div", "ADD EXERCISE", "sec-lbl"));
+
+  const exName = document.createElement("input");
+  exName.type = "text";
+  exName.placeholder = "Exercise name";
+  exName.value = state.editEx.name;
+  exName.className = "mb12";
+  exName.addEventListener("input", e => state.editEx.name = e.target.value);
+  box.appendChild(exName);
+
+  const nums = el("div", "row gap8 mb12");
+  ["sets","reps"].forEach(key => {
+    const wrap = el("div", "", { flex:1 });
+    wrap.appendChild(elText("div", key.toUpperCase(), "sec-lbl"));
+    const inp = document.createElement("input");
+    inp.type = "number";
+    inp.value = state.editEx[key];
+    inp.addEventListener("input", e => state.editEx[key] = parseInt(e.target.value) || 0);
+    wrap.appendChild(inp);
+    nums.appendChild(wrap);
+  });
+  box.appendChild(nums);
+
+  box.appendChild(btn("+ Add Exercise", () => {
+    if (!state.editEx.name) return;
+    state.editWkt.exercises.push({ ...state.editEx, id: uid() });
+    state.editEx = { name: "", sets: 3, reps: 8 };
+    render();
+  }));
+  div.appendChild(box);
+  div.appendChild(el("div", "mb12"));
+
+  div.appendChild(btn("Save Changes", saveEdit, "primary"));
+
+  return div;
+}
+
+// ─── DOM HELPERS ─────────────────────────────────────────────────
+function el(tag, cls = "", styles = {}) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  Object.assign(e.style, styles);
+  return e;
+}
+function elText(tag, text, cls = "", styles = {}) {
+  const e = el(tag, cls, styles);
+  e.textContent = text;
+  return e;
+}
+function btn(label, onClick, variant = "") {
+  const b = document.createElement("button");
+  b.textContent = label;
+  b.className = variant === "primary" ? "btn btn-primary"
+               : variant === "danger"  ? "btn-sm btn-danger"
+               : variant === "sm"      ? "btn-sm"
+               : "btn";
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────
+if (isUnlocked()) { loadData(); } else { renderLock(); }
+</script>
+</body>
+</html>
